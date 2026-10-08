@@ -819,19 +819,29 @@ namespace sgpmode {
   * Outpt: None
   * Purpose: Override fun_apply_sym_points functor for nutrient mode
   */
-  void SGPWorld::OverrideSymRewardsNutrient(){
+ void SGPWorld::OverrideSymRewardsNutrient(){
     fun_apply_sym_points = [this](
       sgp_sym_t& sym,
       double task_value_before,
       size_t task_id
     ) {
+      const double sym_interaction_value = sym.GetIntVal();
       double task_value = task_value_before;
       if(GetNutrientSymType() == nutrient_sym_mode_t::PARASITE){
         task_value *= sgp_config.PARASITE_BASE_TASK_VALUE_PROP();
+      }
+      else if (GetNutrientSymType() == nutrient_sym_mode_t::INTERACTION_VALUE_BASED){
+        if (sym_interaction_value < 0){
+          double proportion_lost = 1 - sgp_config.PARASITE_BASE_TASK_VALUE_PROP();
+          double absolute_IV = -1 * sym_interaction_value;
+          double adjusted_proportion_to_gain = 1 - (absolute_IV * proportion_lost);
+          task_value *= adjusted_proportion_to_gain;
+        }
       }
       sym.AddPoints(task_value);
     };  
   }
 }
+
 
 #endif
